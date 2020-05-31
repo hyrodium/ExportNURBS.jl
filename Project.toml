@@ -3,6 +3,10 @@ uuid = "23a6489c-a236-4e7b-aa89-a91a497ba26e"
 authors = ["hyrodium <hyrodium@gmail.com>"]
 version = "0.1.0"
 
+[deps]
+BasicBSpline = "4c5d9882-2acf-4ea4-9e48-968fd4518195"
+Luxor = "ae8d54c2-7ccd-5906-9d76-62fc9837b5bc"
+
 [compat]
 julia = "1"
 
