@@ -44,6 +44,21 @@ function save_png(name::String, M::BSplineManifold; up=5, down=-5, right=5, left
     end
 end
 
+"""
+export png file
+"""
+function save_png(name::String, M::BSplineManifold, colors::Array{T,2} where T <: Colorant; up=5, down=-5, right=5, left=-5, zoom=1, unitlength=100)
+    if split(name,'.')[end] ≠ "png"
+        name = name * ".png"
+    end
+
+    if dim(M) == 2
+        _save_2d2d_color(name, M, colors, up=up, down=down, right=right, left=left, zoom=zoom, unitlength=unitlength)
+    else
+        error("the dimension of B-spline manifold must be 2")
+    end
+end
+
 
 function _save_2d2d(name::String, M::BSplineManifold; up=5, down=-5, right=5, left=-5, zoom=1, mesh=(10,10), unitlength=100, points=true)
     step = unitlength
@@ -93,8 +108,8 @@ function _save_2d2d(name::String, M::BSplineManifold; up=5, down=-5, right=5, le
         end
     end
     finish()
+    return nothing
 end
-
 
 function _save_1d2d(name::String, M::BSplineManifold; up=5, down=-5, right=5, left=-5, zoom=1, mesh=10, unitlength=100, points=true)
     step = unitlength
@@ -126,4 +141,46 @@ function _save_1d2d(name::String, M::BSplineManifold; up=5, down=-5, right=5, le
         poly(CtrlPts[:], :stroke)
     end
     finish()
+    return nothing
+end
+
+function _save_2d2d_color(name::String, M::BSplineManifold, colors::Array{T,2} where T <: Colorant; up=5, down=-5, right=5, left=-5, zoom=1, unitlength=100)
+    mesh = 5
+
+    step = unitlength
+    P = M.bsplinespaces
+    p¹,p² = p = degree.(P)
+    k¹,k² = k = knots.(P)
+    𝒂 = M.controlpoints
+    n¹,n² = n = length.(k)-p.-1
+    𝒑(u) = mapping(M,u)
+
+    color(u) = sum(bsplinebasis(P,u).*colors)
+    D = [k[i][1+p[i]]..k[i][end-p[i]] for i in 1:2]
+
+    K¹ = unique(vcat([collect(range(k¹[i], k¹[i+1], length=mesh+1)) for i in 1+p¹:length(k¹)-p¹-1]...))
+    K² = unique(vcat([collect(range(k²[i], k²[i+1], length=mesh+1)) for i in 1+p²:length(k²)-p²-1]...))
+
+    Drawing(step*(right-left),step*(up-down),name)
+    Luxor.origin(-step*left,step*up)
+    setline(2*zoom)
+    background("white")
+
+    for I₁ ∈ 1:length(K¹)-1, I₂ ∈ 1:length(K²)-1
+        BézPth=BezierPath([
+                BezierPathSegment(map(p->LxrPt(p,step),BézPts(t->𝒑([t,K²[I₂]]),K¹[I₁],K¹[I₁+1]))...),
+                BezierPathSegment(map(p->LxrPt(p,step),BézPts(t->𝒑([K¹[I₁+1],t]),K²[I₂],K²[I₂+1]))...),
+                BezierPathSegment(map(p->LxrPt(p,step),BézPts(t->𝒑([t,K²[I₂+1]]),K¹[I₁+1],K¹[I₁]))...),
+                BezierPathSegment(map(p->LxrPt(p,step),BézPts(t->𝒑([K¹[I₁],t]),K²[I₂+1],K²[I₂]))...)])
+        mesh1 = Luxor.mesh(BézPth, [
+            color([K¹[I₁], K²[I₂]]), # (K¹[I₁], K²[I₂])
+            color([K¹[I₁+1], K²[I₂]]), # (K¹[I₁+1], K²[I₂])
+            color([K¹[I₁+1], K²[I₂+1]]), # (K¹[I₁+1], K²[I₂+1])
+            color([K¹[I₁], K²[I₂+1]])  # (K¹[I₁], K²[I₂+1])
+            ])
+        setmesh(mesh1)
+        box(LxrPt([right+left,up+down]/2,step), (right-left)*step,(up-down)*step,:fill)
+    end
+    finish()
+    return nothing
 end
