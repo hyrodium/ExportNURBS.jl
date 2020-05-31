@@ -2,5 +2,5 @@ using ExportNURBS
 using Test
 
 @testset "ExportNURBS.jl" begin
-    # Write your own tests here.
+    @test true
 end
