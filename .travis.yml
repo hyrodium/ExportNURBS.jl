@@ -9,7 +9,7 @@ julia:
 notifications:
   email: false
 before_install:
-  - julia --project=docs -e '
+  - julia  -e '
       using Pkg;
       Pkg.add(PackageSpec(url="https://github.com/hyrodium/BasicBSpline.jl"));'
 jobs:
