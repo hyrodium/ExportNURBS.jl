@@ -15,7 +15,7 @@ end
 """
 export svg file
 """
-function save_svg(name::String, M::BSplineManifold; up=5, down=-5, right=5, left=-5, zoom=1, mesh=(10,10), unitlength=100, points=true)
+function save_svg(name::String, M::AbstractBSplineManifold; up=5, down=-5, right=5, left=-5, zoom=1, mesh=(10,10), unitlength=100, points=true)
     if split(name,'.')[end] ≠ "svg"
         name = name * ".svg"
     end
@@ -31,7 +31,7 @@ end
 """
 export png file
 """
-function save_png(name::String, M::BSplineManifold; up=5, down=-5, right=5, left=-5, zoom=1, mesh=(10,10), unitlength=100, points=true)
+function save_png(name::String, M::AbstractBSplineManifold; up=5, down=-5, right=5, left=-5, zoom=1, mesh=(10,10), unitlength=100, points=true)
     if split(name,'.')[end] ≠ "png"
         name = name * ".png"
     end
@@ -47,7 +47,7 @@ end
 """
 export png file
 """
-function save_png(name::String, M::BSplineManifold, colors::Array{T,2} where T <: Colorant; up=5, down=-5, right=5, left=-5, zoom=1, unitlength=100)
+function save_png(name::String, M::AbstractBSplineManifold, colors::Array{T,2} where T <: Colorant; up=5, down=-5, right=5, left=-5, zoom=1, unitlength=100)
     if split(name,'.')[end] ≠ "png"
         name = name * ".png"
     end
@@ -60,7 +60,7 @@ function save_png(name::String, M::BSplineManifold, colors::Array{T,2} where T <
 end
 
 
-function _save_2d2d(name::String, M::BSplineManifold; up=5, down=-5, right=5, left=-5, zoom=1, mesh=(10,10), unitlength=100, points=true)
+function _save_2d2d(name::String, M::AbstractBSplineManifold; up=5, down=-5, right=5, left=-5, zoom=1, mesh=(10,10), unitlength=100, points=true)
     step = unitlength
     p¹,p² = p = degree.(M.bsplinespaces)
     k¹,k² = k = knots.(M.bsplinespaces)
@@ -111,7 +111,7 @@ function _save_2d2d(name::String, M::BSplineManifold; up=5, down=-5, right=5, le
     return nothing
 end
 
-function _save_1d2d(name::String, M::BSplineManifold; up=5, down=-5, right=5, left=-5, zoom=1, mesh=10, unitlength=100, points=true)
+function _save_1d2d(name::String, M::AbstractBSplineManifold; up=5, down=-5, right=5, left=-5, zoom=1, mesh=10, unitlength=100, points=true)
     step = unitlength
     p¹, = p = degree.(M.bsplinespaces)
     k¹, = k = knots.(M.bsplinespaces)
@@ -144,7 +144,7 @@ function _save_1d2d(name::String, M::BSplineManifold; up=5, down=-5, right=5, le
     return nothing
 end
 
-function _save_2d2d_color(name::String, M::BSplineManifold, colors::Array{T,2} where T <: Colorant; up=5, down=-5, right=5, left=-5, zoom=1, unitlength=100)
+function _save_2d2d_color(name::String, M::AbstractBSplineManifold, colors::Array{T,2} where T <: Colorant; up=5, down=-5, right=5, left=-5, zoom=1, unitlength=100)
     mesh = 5
 
     step = unitlength
