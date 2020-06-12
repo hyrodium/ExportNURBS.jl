@@ -47,7 +47,7 @@ end
 """
 export png file
 """
-function save_png(name::String, M::AbstractBSplineManifold, colors::Array{T,2} where T <: Colorant; up=5, down=-5, right=5, left=-5, zoom=1, unitlength=100)
+function save_png(name::String, M::AbstractBSplineManifold, colors::Array{<:Colorant,2}; up=5, down=-5, right=5, left=-5, zoom=1, unitlength=100)
     if split(name,'.')[end] ≠ "png"
         name = name * ".png"
     end
