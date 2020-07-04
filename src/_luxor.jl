@@ -75,9 +75,9 @@ function _save_2d2d(name::String, M::AbstractBSplineManifold; up=5, down=-5, rig
     Drawing(step*(right-left),step*(up-down),name)
     Luxor.origin(-step*left,step*up)
     setline(zoom)
-    background("white")
+    background(RGBA(0.0,0.0,0.0,0.0))
 
-    sethue(1,.5,.5) # Pale Red
+    setcolor(1,.5,.5) # Pale Red
     drawbezierpath(BezierPath(vcat(
         [BezierPathSegment(map(p->LxrPt(p,step),BézPts(u¹->𝒑([u¹,K²[1]]),K¹[i],K¹[i+1]))...) for i ∈ 1:N¹],
         [BezierPathSegment(map(p->LxrPt(p,step),BézPts(u²->𝒑([K¹[end],u²]),K²[i],K²[i+1]))...) for i ∈ 1:N²],
@@ -85,7 +85,7 @@ function _save_2d2d(name::String, M::AbstractBSplineManifold; up=5, down=-5, rig
         [BezierPathSegment(map(p->LxrPt(p,step),BézPts(u²->𝒑([K¹[1],u²]),K²[end-i+1],K²[end-i]))...) for i ∈ 1:N²]
     )),:fill,close=true)
 
-    sethue("red") # Red
+    setcolor("red") # Red
     for u¹ ∈ range(K¹[1],stop=K¹[end],length=m¹+1)
         drawbezierpath(BezierPath([BezierPathSegment(map(p->LxrPt(p,step),BézPts(u²->𝒑([u¹,u²]),K²[i],K²[i+1]))...) for i ∈ 1:N²]),:stroke)
     end
@@ -94,12 +94,12 @@ function _save_2d2d(name::String, M::AbstractBSplineManifold; up=5, down=-5, rig
     end
 
     if points
-        sethue(.1,.1,.1) # Dark Gray
+        setcolor(.1,.1,.1) # Dark Gray
         setline(zoom)
         CtrlPts = [LxrPt(𝒂[i,j,:],step) for i ∈ 1:size(𝒂)[1], j ∈ 1:size(𝒂)[2]]
         map(p->circle(p,3*zoom,:fill), CtrlPts)
 
-        sethue(.3,.3,.3) # Light Gray
+        setcolor(.3,.3,.3) # Light Gray
         for i ∈ 1:n¹
             poly(CtrlPts[i,:], :stroke)
         end
@@ -126,18 +126,18 @@ function _save_1d2d(name::String, M::AbstractBSplineManifold; up=5, down=-5, rig
     Drawing(step*(right-left),step*(up-down),name)
     Luxor.origin(-step*left,step*up)
     setline(2*zoom)
-    background("white")
+    background(RGBA(0.0,0.0,0.0,0.0))
 
-    sethue("red") # Red
+    setcolor("red") # Red
     drawbezierpath(BezierPath([BezierPathSegment(map(p->LxrPt(p,step),BézPts(u¹->𝒑([u¹]),K¹[i],K¹[i+1]))...) for i ∈ 1:N¹]),:stroke)
 
     if points
-        sethue(.1,.1,.1) # Dark Gray
+        setcolor(.1,.1,.1) # Dark Gray
         setline(zoom)
         CtrlPts = [LxrPt(𝒂[i,:],step) for i ∈ 1:size(𝒂)[1]]
         map(p->circle(p,3*zoom,:fill), CtrlPts)
 
-        sethue(.3,.3,.3) # Light Gray
+        setcolor(.3,.3,.3) # Light Gray
         poly(CtrlPts[:], :stroke)
     end
     finish()
@@ -148,7 +148,7 @@ function _save_2d2d_color(name::String, M::AbstractBSplineManifold, colors::Arra
     mesh = 5
 
     step = unitlength
-    P = M.bsplinespaces
+    P = BSplineSpace.(M.bsplinespaces)
     p¹,p² = p = degree.(P)
     k¹,k² = k = knots.(P)
     𝒂 = M.controlpoints
@@ -164,7 +164,7 @@ function _save_2d2d_color(name::String, M::AbstractBSplineManifold, colors::Arra
     Drawing(step*(right-left),step*(up-down),name)
     Luxor.origin(-step*left,step*up)
     setline(2*zoom)
-    background("white")
+    background(RGBA(0.0,0.0,0.0,0.0))
 
     for I₁ ∈ 1:length(K¹)-1, I₂ ∈ 1:length(K²)-1
         BézPth=BezierPath([
