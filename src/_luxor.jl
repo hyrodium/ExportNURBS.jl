@@ -15,14 +15,14 @@ end
 """
 export svg file
 """
-function save_svg(name::String, M::AbstractBSplineManifold; up=5, down=-5, right=5, left=-5, zoom=1, mesh=(10,10), unitlength=100, points=true)
+function save_svg(name::String, M::AbstractBSplineManifold; up=5, down=-5, right=5, left=-5, zoom=1, mesh=(10,10), unitlength=100, points=true, thickness=1, backgroundcolor=RGB(1,1,1), linecolor=RGB(1,0,0))
     if split(name,'.')[end] ≠ "svg"
         name = name * ".svg"
     end
     if dim(M) == 1
-        _save_1d2d(name, M, up=up, down=down, right=right, left=left, zoom=zoom, mesh=mesh, unitlength=unitlength, points=points)
+        _save_1d2d(name, M, up=up, down=down, right=right, left=left, zoom=zoom, mesh=mesh, unitlength=unitlength, points=points, thickness=thickness, backgroundcolor=backgroundcolor, linecolor=linecolor)
     elseif dim(M) == 2
-        _save_2d2d(name, M, up=up, down=down, right=right, left=left, zoom=zoom, mesh=mesh, unitlength=unitlength, points=points)
+        _save_2d2d(name, M, up=up, down=down, right=right, left=left, zoom=zoom, mesh=mesh, unitlength=unitlength, points=points, thickness=thickness, backgroundcolor=backgroundcolor, linecolor=linecolor)
     else
         error("the dimension of B-spline manifold must be 2 or less")
     end
@@ -31,14 +31,14 @@ end
 """
 export png file
 """
-function save_png(name::String, M::AbstractBSplineManifold; up=5, down=-5, right=5, left=-5, zoom=1, mesh=(10,10), unitlength=100, points=true)
+function save_png(name::String, M::AbstractBSplineManifold; up=5, down=-5, right=5, left=-5, zoom=1, mesh=(10,10), unitlength=100, points=true, thickness=1, backgroundcolor=RGB(1,1,1), linecolor=RGB(1,0,0))
     if split(name,'.')[end] ≠ "png"
         name = name * ".png"
     end
     if dim(M) == 1
-        _save_1d2d(name, M, up=up, down=down, right=right, left=left, zoom=zoom, mesh=mesh, unitlength=unitlength, points=points)
+        _save_1d2d(name, M, up=up, down=down, right=right, left=left, zoom=zoom, mesh=mesh, unitlength=unitlength, points=points, thickness=thickness, backgroundcolor=backgroundcolor, linecolor=linecolor)
     elseif dim(M) == 2
-        _save_2d2d(name, M, up=up, down=down, right=right, left=left, zoom=zoom, mesh=mesh, unitlength=unitlength, points=points)
+        _save_2d2d(name, M, up=up, down=down, right=right, left=left, zoom=zoom, mesh=mesh, unitlength=unitlength, points=points, thickness=thickness, backgroundcolor=backgroundcolor, linecolor=linecolor)
     else
         error("the dimension of B-spline manifold must be 2 or less")
     end
@@ -75,7 +75,7 @@ function save_png(name::String, M::AbstractBSplineManifold, colorfunc::Function;
 end
 
 
-function _save_2d2d(name::String, M::AbstractBSplineManifold; up=5, down=-5, right=5, left=-5, zoom=1, mesh=(10,10), unitlength=100, points=true)
+function _save_2d2d(name::String, M::AbstractBSplineManifold; up=5, down=-5, right=5, left=-5, zoom=1, mesh=(10,10), unitlength=100, points=true, thickness=1, backgroundcolor=RGB(1,1,1), linecolor=RGB(1,0,0))
     step = unitlength
     p¹,p² = p = degree.(M.bsplinespaces)
     k¹,k² = k = knots.(M.bsplinespaces)
@@ -89,8 +89,8 @@ function _save_2d2d(name::String, M::AbstractBSplineManifold; up=5, down=-5, rig
 
     Drawing(step*(right-left),step*(up-down),name)
     Luxor.origin(-step*left,step*up)
-    setline(zoom)
-    background(RGBA(0.0,0.0,0.0,0.0))
+    setline(thickness)
+    background(backgroundcolor)
 
     setcolor(1,.5,.5) # Pale Red
     drawbezierpath(BezierPath(vcat(
@@ -100,7 +100,7 @@ function _save_2d2d(name::String, M::AbstractBSplineManifold; up=5, down=-5, rig
         [BezierPathSegment(map(p->LxrPt(p,step),BézPts(u²->𝒑([K¹[1],u²]),K²[end-i+1],K²[end-i]))...) for i ∈ 1:N²]
     )),:fill,close=true)
 
-    setcolor("red") # Red
+    setcolor(linecolor) # Red
     for u¹ ∈ range(K¹[1],stop=K¹[end],length=m¹+1)
         drawbezierpath(BezierPath([BezierPathSegment(map(p->LxrPt(p,step),BézPts(u²->𝒑([u¹,u²]),K²[i],K²[i+1]))...) for i ∈ 1:N²]),:stroke)
     end
@@ -109,24 +109,25 @@ function _save_2d2d(name::String, M::AbstractBSplineManifold; up=5, down=-5, rig
     end
 
     if points
-        setcolor(.1,.1,.1) # Dark Gray
-        setline(zoom)
         CtrlPts = [LxrPt(𝒂[i,j,:],step) for i ∈ 1:size(𝒂)[1], j ∈ 1:size(𝒂)[2]]
-        map(p->circle(p,3*zoom,:fill), CtrlPts)
 
-        setcolor(.3,.3,.3) # Light Gray
+        setcolor(RGB(.3,.3,.3)) # Light Gray
+        setline(thickness)
         for i ∈ 1:n¹
             poly(CtrlPts[i,:], :stroke)
         end
         for j ∈ 1:n²
             poly(CtrlPts[:,j], :stroke)
         end
+
+        setcolor(RGB(.1,.1,.1)) # Dark Gray
+        map(p->circle(p,3*thickness,:fill), CtrlPts)
     end
     finish()
     return nothing
 end
 
-function _save_1d2d(name::String, M::AbstractBSplineManifold; up=5, down=-5, right=5, left=-5, zoom=1, mesh=10, unitlength=100, points=true)
+function _save_1d2d(name::String, M::AbstractBSplineManifold; up=5, down=-5, right=5, left=-5, zoom=1, mesh=10, unitlength=100, points=true, thickness=1, backgroundcolor=RGB(1,1,1), linecolor=RGB(1,0,0))
     step = unitlength
     p¹, = p = degree.(M.bsplinespaces)
     k¹, = k = knots.(M.bsplinespaces)
@@ -140,20 +141,21 @@ function _save_1d2d(name::String, M::AbstractBSplineManifold; up=5, down=-5, rig
 
     Drawing(step*(right-left),step*(up-down),name)
     Luxor.origin(-step*left,step*up)
-    setline(2*zoom)
-    background(RGBA(0.0,0.0,0.0,0.0))
+    setline(2*thickness)
+    background(backgroundcolor)
 
-    setcolor("red") # Red
+    setcolor(linecolor) # Red
     drawbezierpath(BezierPath([BezierPathSegment(map(p->LxrPt(p,step),BézPts(u¹->𝒑([u¹]),K¹[i],K¹[i+1]))...) for i ∈ 1:N¹]),:stroke)
 
     if points
-        setcolor(.1,.1,.1) # Dark Gray
-        setline(zoom)
         CtrlPts = [LxrPt(𝒂[i,:],step) for i ∈ 1:size(𝒂)[1]]
-        map(p->circle(p,3*zoom,:fill), CtrlPts)
 
-        setcolor(.3,.3,.3) # Light Gray
+        setcolor(RGB(.3,.3,.3)) # Light Gray
+        setline(thickness)
         poly(CtrlPts[:], :stroke)
+
+        setcolor(RGB(.1,.1,.1)) # Dark Gray
+        map(p->circle(p,3*thickness,:fill), CtrlPts)
     end
     finish()
     return nothing
