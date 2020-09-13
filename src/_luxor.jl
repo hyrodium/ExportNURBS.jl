@@ -77,9 +77,9 @@ end
 
 function _save_2d2d(name::String, M::AbstractBSplineManifold; up=5, down=-5, right=5, left=-5, zoom=1, mesh=(10,10), unitlength=100, points=true, thickness=1, backgroundcolor=RGB(1,1,1), linecolor=RGB(1,0,0))
     step = unitlength
-    p¹,p² = p = degree.(M.bsplinespaces)
-    k¹,k² = k = knots.(M.bsplinespaces)
-    𝒂 = M.controlpoints
+    p¹,p² = p = degree.(bsplinespaces(M))
+    k¹,k² = k = knots.(bsplinespaces(M))
+    𝒂 = controlpoints(M)
     n¹,n² = n = length.(k)-p.-1
     𝒑(u) = mapping(M,u)
 
@@ -129,9 +129,9 @@ end
 
 function _save_1d2d(name::String, M::AbstractBSplineManifold; up=5, down=-5, right=5, left=-5, zoom=1, mesh=10, unitlength=100, points=true, thickness=1, backgroundcolor=RGB(1,1,1), linecolor=RGB(1,0,0))
     step = unitlength
-    p¹, = p = degree.(M.bsplinespaces)
-    k¹, = k = knots.(M.bsplinespaces)
-    𝒂 = M.controlpoints
+    p¹, = p = degree.(bsplinespaces(M))
+    k¹, = k = knots.(bsplinespaces(M))
+    𝒂 = controlpoints(M)
     n¹, = n = length.(k)-p.-1
     𝒑(u) = mapping(M,u)
 
@@ -162,7 +162,7 @@ function _save_1d2d(name::String, M::AbstractBSplineManifold; up=5, down=-5, rig
 end
 
 function _save_2d2d_color(name::String, M::AbstractBSplineManifold, colors::Array{T,2} where T <: Colorant; up=5, down=-5, right=5, left=-5, zoom=1, unitlength=100)
-    P = BSplineSpace.(M.bsplinespaces)
+    P = BSplineSpace.(bsplinespaces(M))
     colorfunc(u) = sum(bsplinebasis(P,u).*colors)
     _save_2d2d_color(name, M, colorfunc; up=up, down=down, right=right, left=left, zoom=zoom, unitlength=unitlength)
 end
@@ -171,10 +171,10 @@ function _save_2d2d_color(name::String, M::AbstractBSplineManifold, colorfunc::F
     mesh = 10
 
     step = unitlength
-    P = BSplineSpace.(M.bsplinespaces)
+    P = BSplineSpace.(bsplinespaces(M))
     p¹,p² = p = degree.(P)
     k¹,k² = k = knots.(P)
-    𝒂 = M.controlpoints
+    𝒂 = controlpoints(M)
     n¹,n² = n = length.(k)-p.-1
     𝒑(u) = mapping(M,u)
 
