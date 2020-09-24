@@ -77,10 +77,11 @@ end
 
 function _save_2d2d(name::String, M::AbstractBSplineManifold; up=5, down=-5, right=5, left=-5, zoom=1, mesh=(10,10), unitlength=100, points=true, thickness=1, backgroundcolor=RGB(1,1,1), linecolor=RGB(1,0,0))
     step = unitlength
-    p¹,p² = p = degree.(bsplinespaces(M))
-    k¹,k² = k = knots.(bsplinespaces(M))
+    P1, P2 = P = collect(bsplinespaces(M))
+    p¹, p² = p = degree.(P)
+    k¹, k² = k = knots.(P)
     𝒂 = controlpoints(M)
-    n¹,n² = n = length.(k)-p.-1
+    n¹, n² = n = length.(k)-p.-1
     𝒑(u) = mapping(M,u)
 
     K¹,K² = K = [unique(k[i][1+p[i]:end-p[i]]) for i ∈ 1:2]
@@ -129,8 +130,9 @@ end
 
 function _save_1d2d(name::String, M::AbstractBSplineManifold; up=5, down=-5, right=5, left=-5, zoom=1, mesh=10, unitlength=100, points=true, thickness=1, backgroundcolor=RGB(1,1,1), linecolor=RGB(1,0,0))
     step = unitlength
-    p¹, = p = degree.(bsplinespaces(M))
-    k¹, = k = knots.(bsplinespaces(M))
+    P1, = P = collect(bsplinespaces(M))
+    p¹, = p = degree.(P)
+    k¹, = k = knots.(P)
     𝒂 = controlpoints(M)
     n¹, = n = length.(k)-p.-1
     𝒑(u) = mapping(M,u)
@@ -144,7 +146,7 @@ function _save_1d2d(name::String, M::AbstractBSplineManifold; up=5, down=-5, rig
     setline(2*thickness)
     background(backgroundcolor)
 
-    setcolor(linecolor) # Red
+    setcolor(linecolor)
     drawbezierpath(BezierPath([BezierPathSegment(map(p->LxrPt(p,step),BézPts(u¹->𝒑([u¹]),K¹[i],K¹[i+1]))...) for i ∈ 1:N¹]),:stroke)
 
     if points
@@ -162,7 +164,7 @@ function _save_1d2d(name::String, M::AbstractBSplineManifold; up=5, down=-5, rig
 end
 
 function _save_2d2d_color(name::String, M::AbstractBSplineManifold, colors::Array{T,2} where T <: Colorant; up=5, down=-5, right=5, left=-5, zoom=1, unitlength=100)
-    P = BSplineSpace.(bsplinespaces(M))
+    P = collect(bsplinespaces(M))
     colorfunc(u) = sum(bsplinebasis(P,u).*colors)
     _save_2d2d_color(name, M, colorfunc; up=up, down=down, right=right, left=left, zoom=zoom, unitlength=unitlength)
 end
@@ -171,11 +173,11 @@ function _save_2d2d_color(name::String, M::AbstractBSplineManifold, colorfunc::F
     mesh = 10
 
     step = unitlength
-    P = BSplineSpace.(bsplinespaces(M))
-    p¹,p² = p = degree.(P)
-    k¹,k² = k = knots.(P)
+    P = collect(bsplinespaces(M))
+    p¹, p² = p = degree.(P)
+    k¹, k² = k = knots.(P)
     𝒂 = controlpoints(M)
-    n¹,n² = n = length.(k)-p.-1
+    n¹, n² = n = length.(k)-p.-1
     𝒑(u) = mapping(M,u)
 
     D = [k[i][1+p[i]]..k[i][end-p[i]] for i in 1:2]
@@ -195,10 +197,10 @@ function _save_2d2d_color(name::String, M::AbstractBSplineManifold, colorfunc::F
                 BezierPathSegment(map(p->LxrPt(p,step),BézPts(t->𝒑([t,K²[I₂+1]]),K¹[I₁+1],K¹[I₁]))...),
                 BezierPathSegment(map(p->LxrPt(p,step),BézPts(t->𝒑([K¹[I₁],t]),K²[I₂+1],K²[I₂]))...)])
         mesh1 = Luxor.mesh(BézPth, [
-            colorfunc([K¹[I₁], K²[I₂]]), # (K¹[I₁], K²[I₂])
-            colorfunc([K¹[I₁+1], K²[I₂]]), # (K¹[I₁+1], K²[I₂])
-            colorfunc([K¹[I₁+1], K²[I₂+1]]), # (K¹[I₁+1], K²[I₂+1])
-            colorfunc([K¹[I₁], K²[I₂+1]])  # (K¹[I₁], K²[I₂+1])
+            colorfunc([K¹[I₁], K²[I₂]]),
+            colorfunc([K¹[I₁+1], K²[I₂]]),
+            colorfunc([K¹[I₁+1], K²[I₂+1]]),
+            colorfunc([K¹[I₁], K²[I₂+1]])
             ])
         setmesh(mesh1)
         box(LxrPt([right+left,up+down]/2,step), (right-left)*step,(up-down)*step,:fill)
