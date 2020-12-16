@@ -8,20 +8,15 @@ julia:
   - nightly
 notifications:
   email: false
-before_install:
-  - julia  -e '
-      using Pkg;
-      Pkg.add(PackageSpec(url="https://github.com/hyrodium/BasicBSpline.jl"));'
 jobs:
   allow_failures:
     - julia: nightly
   fast_finish: true
   include:
     - stage: Documentation
-      julia: 1.0
+      julia: nightly
       script: julia --project=docs -e '
           using Pkg;
-          Pkg.add(PackageSpec(url="https://github.com/hyrodium/BasicBSpline.jl"));
           Pkg.develop(PackageSpec(path=pwd()));
           Pkg.instantiate();
           include("docs/make.jl");'
