@@ -82,7 +82,7 @@ function _save_2d2d(name::String, M::AbstractBSplineManifold; up=5, down=-5, rig
     k¹, k² = k = knots.(P)
     𝒂 = controlpoints(M)
     n¹, n² = n = length.(k)-p.-1
-    𝒑(u) = mapping(M,u)
+    𝒑(u) = M(u)
 
     K¹,K² = K = [unique(k[i][1+p[i]:end-p[i]]) for i ∈ 1:2]
     N¹,N² = length.(K).-1
@@ -135,7 +135,7 @@ function _save_1d2d(name::String, M::AbstractBSplineManifold; up=5, down=-5, rig
     k¹, = k = knots.(P)
     𝒂 = controlpoints(M)
     n¹, = n = length.(k)-p.-1
-    𝒑(u) = mapping(M,u)
+    𝒑(u) = M(u)
 
     K¹, = K = [unique(k[i][1+p[i]:end-p[i]]) for i ∈ 1:1]
     N¹, = length.(K).-1
@@ -178,7 +178,7 @@ function _save_2d2d_color(name::String, M::AbstractBSplineManifold, colorfunc::F
     k¹, k² = k = knots.(P)
     𝒂 = controlpoints(M)
     n¹, n² = n = length.(k)-p.-1
-    𝒑(u) = mapping(M,u)
+    𝒑(u) = M(u)
 
     D = [k[i][1+p[i]]..k[i][end-p[i]] for i in 1:2]
 
