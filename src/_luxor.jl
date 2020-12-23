@@ -1,11 +1,11 @@
 """
 control points of Bézier curve from given function and range
 """
-function BézPts(𝒑,a,b)
-    𝒑(a),
-    3*(𝒑(2*a/3+b/3)-(8*𝒑(a)+𝒑(b))/27)-3*(𝒑(a/3+2*b/3)-(𝒑(a)+8*𝒑(b))/27)/2,
-    -3*(𝒑(2*a/3+b/3)-(8*𝒑(a)+𝒑(b))/27)/2+3*(𝒑(a/3+2*b/3)-(𝒑(a)+8*𝒑(b))/27),
-    𝒑(b)
+function BézPts(f,t0,t1)
+    f(t0),
+    3*(f(2*t0/3+t1/3)-(8*f(t0)+f(t1))/27)-3*(f(t0/3+2*t1/3)-(f(t0)+8*f(t1))/27)/2,
+    -3*(f(2*t0/3+t1/3)-(8*f(t0)+f(t1))/27)/2+3*(f(t0/3+2*t1/3)-(f(t0)+8*f(t1))/27),
+    f(t1)
 end
 
 function LxrPt(p::AbstractVector{<:Real},unitlength)
@@ -84,13 +84,12 @@ function _save_luxor_2d2d(name::String, M::AbstractBSplineManifold; up=5, down=-
     P1, P2 = P = collect(bsplinespaces(M))
     p¹, p² = p = degree.(P)
     k¹, k² = k = knots.(P)
-    𝒂 = controlpoints(M)
-    n¹, n² = n = length.(k)-p.-1
-    𝒑(u) = M(u)
+    a = controlpoints(M)
+    n¹, n² = n = dim.(P)
 
-    K¹,K² = K = [unique(k[i][1+p[i]:end-p[i]]) for i ∈ 1:2]
-    N¹,N² = length.(K).-1
-    m¹,m² = mesh
+    K¹, K² = K = [unique(k[i][1+p[i]:end-p[i]]) for i in 1:2]
+    N¹, N² = length.(K).-1
+    m¹, m² = mesh
 
     Drawing(unitlength*(right-left),unitlength*(up-down),name)
     Luxor.origin(-unitlength*left,unitlength*up)
@@ -99,29 +98,29 @@ function _save_luxor_2d2d(name::String, M::AbstractBSplineManifold; up=5, down=-
 
     setcolor(fillcolor)
     drawbezierpath(BezierPath(vcat(
-        [BezierPathSegment(map(p->LxrPt(p,unitlength),BézPts(u¹->𝒑([u¹,K²[1]]),K¹[i],K¹[i+1]))...) for i ∈ 1:N¹],
-        [BezierPathSegment(map(p->LxrPt(p,unitlength),BézPts(u²->𝒑([K¹[end],u²]),K²[i],K²[i+1]))...) for i ∈ 1:N²],
-        [BezierPathSegment(map(p->LxrPt(p,unitlength),BézPts(u¹->𝒑([u¹,K²[end]]),K¹[end-i+1],K¹[end-i]))...) for i ∈ 1:N¹],
-        [BezierPathSegment(map(p->LxrPt(p,unitlength),BézPts(u²->𝒑([K¹[1],u²]),K²[end-i+1],K²[end-i]))...) for i ∈ 1:N²]
+        [BezierPathSegment(map(p->LxrPt(p,unitlength),BézPts(u¹->M([u¹,K²[1]]),K¹[i],K¹[i+1]))...) for i in 1:N¹],
+        [BezierPathSegment(map(p->LxrPt(p,unitlength),BézPts(u²->M([K¹[end],u²]),K²[i],K²[i+1]))...) for i in 1:N²],
+        [BezierPathSegment(map(p->LxrPt(p,unitlength),BézPts(u¹->M([u¹,K²[end]]),K¹[end-i+1],K¹[end-i]))...) for i in 1:N¹],
+        [BezierPathSegment(map(p->LxrPt(p,unitlength),BézPts(u²->M([K¹[1],u²]),K²[end-i+1],K²[end-i]))...) for i in 1:N²]
     )),:fill,close=true)
 
     setcolor(linecolor)
-    for u¹ ∈ range(K¹[1],stop=K¹[end],length=m¹+1)
-        drawbezierpath(BezierPath([BezierPathSegment(map(p->LxrPt(p,unitlength),BézPts(u²->𝒑([u¹,u²]),K²[i],K²[i+1]))...) for i ∈ 1:N²]),:stroke)
+    for u¹ in range(K¹[1],stop=K¹[end],length=m¹+1)
+        drawbezierpath(BezierPath([BezierPathSegment(map(p->LxrPt(p,unitlength),BézPts(u²->M([u¹,u²]),K²[i],K²[i+1]))...) for i in 1:N²]),:stroke)
     end
-    for u² ∈ range(K²[1],stop=K²[end],length=m²+1)
-        drawbezierpath(BezierPath([BezierPathSegment(map(p->LxrPt(p,unitlength),BézPts(u¹->𝒑([u¹,u²]),K¹[i],K¹[i+1]))...) for i ∈ 1:N¹]),:stroke)
+    for u² in range(K²[1],stop=K²[end],length=m²+1)
+        drawbezierpath(BezierPath([BezierPathSegment(map(p->LxrPt(p,unitlength),BézPts(u¹->M([u¹,u²]),K¹[i],K¹[i+1]))...) for i in 1:N¹]),:stroke)
     end
 
     if points
-        CtrlPts = [LxrPt(𝒂[i,j,:],unitlength) for i ∈ 1:size(𝒂)[1], j ∈ 1:size(𝒂)[2]]
+        CtrlPts = [LxrPt(a[i,j,:],unitlength) for i in 1:size(a)[1], j in 1:size(a)[2]]
 
         setcolor(segmentcolor)
         setline(thickness)
-        for i ∈ 1:n¹
+        for i in 1:n¹
             poly(CtrlPts[i,:], :stroke)
         end
-        for j ∈ 1:n²
+        for j in 1:n²
             poly(CtrlPts[:,j], :stroke)
         end
 
@@ -140,11 +139,10 @@ function _save_luxor_1d2d(name::String, M::AbstractBSplineManifold; up=5, down=-
     P1, = P = collect(bsplinespaces(M))
     p¹, = p = degree.(P)
     k¹, = k = knots.(P)
-    𝒂 = controlpoints(M)
-    n¹, = n = length.(k)-p.-1
-    𝒑(u) = M(u)
+    a = controlpoints(M)
+    n¹, = n = dim.(P)
 
-    K¹, = K = [unique(k[i][1+p[i]:end-p[i]]) for i ∈ 1:1]
+    K¹, = K = [unique(k[i][1+p[i]:end-p[i]]) for i in 1:1]
     N¹, = length.(K).-1
     m¹, = mesh
 
@@ -154,10 +152,10 @@ function _save_luxor_1d2d(name::String, M::AbstractBSplineManifold; up=5, down=-
     background(backgroundcolor)
 
     setcolor(linecolor)
-    drawbezierpath(BezierPath([BezierPathSegment(map(p->LxrPt(p,unitlength),BézPts(u¹->𝒑([u¹]),K¹[i],K¹[i+1]))...) for i ∈ 1:N¹]),:stroke)
+    drawbezierpath(BezierPath([BezierPathSegment(map(p->LxrPt(p,unitlength),BézPts(u¹->M([u¹]),K¹[i],K¹[i+1]))...) for i in 1:N¹]),:stroke)
 
     if points
-        CtrlPts = [LxrPt(𝒂[i,:],unitlength) for i ∈ 1:size(𝒂)[1]]
+        CtrlPts = [LxrPt(a[i,:],unitlength) for i in 1:size(a)[1]]
 
         setcolor(segmentcolor)
         setline(thickness)
@@ -182,9 +180,8 @@ function _save_luxor_2d2d_color(name::String, M::AbstractBSplineManifold, colorf
     P = collect(bsplinespaces(M))
     p¹, p² = p = degree.(P)
     k¹, k² = k = knots.(P)
-    𝒂 = controlpoints(M)
-    n¹, n² = n = length.(k)-p.-1
-    𝒑(u) = M(u)
+    a = controlpoints(M)
+    n¹, n² = n = dim.(P)
 
     D = [k[i][1+p[i]]..k[i][end-p[i]] for i in 1:2]
 
@@ -195,12 +192,12 @@ function _save_luxor_2d2d_color(name::String, M::AbstractBSplineManifold, colorf
     Luxor.origin(-unitlength*left,unitlength*up)
     background(RGBA(0,0,0,0))
 
-    for I₁ ∈ 1:length(K¹)-1, I₂ ∈ 1:length(K²)-1
+    for I₁ in 1:length(K¹)-1, I₂ in 1:length(K²)-1
         BézPth=BezierPath([
-                BezierPathSegment(map(p->LxrPt(p,unitlength),BézPts(t->𝒑([t,K²[I₂]]),K¹[I₁],K¹[I₁+1]))...),
-                BezierPathSegment(map(p->LxrPt(p,unitlength),BézPts(t->𝒑([K¹[I₁+1],t]),K²[I₂],K²[I₂+1]))...),
-                BezierPathSegment(map(p->LxrPt(p,unitlength),BézPts(t->𝒑([t,K²[I₂+1]]),K¹[I₁+1],K¹[I₁]))...),
-                BezierPathSegment(map(p->LxrPt(p,unitlength),BézPts(t->𝒑([K¹[I₁],t]),K²[I₂+1],K²[I₂]))...)])
+                BezierPathSegment(map(p->LxrPt(p,unitlength),BézPts(t->M([t,K²[I₂]]),K¹[I₁],K¹[I₁+1]))...),
+                BezierPathSegment(map(p->LxrPt(p,unitlength),BézPts(t->M([K¹[I₁+1],t]),K²[I₂],K²[I₂+1]))...),
+                BezierPathSegment(map(p->LxrPt(p,unitlength),BézPts(t->M([t,K²[I₂+1]]),K¹[I₁+1],K¹[I₁]))...),
+                BezierPathSegment(map(p->LxrPt(p,unitlength),BézPts(t->M([K¹[I₁],t]),K²[I₂+1],K²[I₂]))...)])
         mesh1 = Luxor.mesh(BézPth, [
             colorfunc([K¹[I₁], K²[I₂]]),
             colorfunc([K¹[I₁+1], K²[I₂]]),
