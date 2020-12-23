@@ -170,15 +170,15 @@ function _save_povray_2d3d(name::String, M::AbstractBSplineManifold; mesh::Tuple
     script *= "union{\n"
     script *= "  object{\n"
     script *= _mesh2(M,mesh=mesh, preindent=2)
-    script *= "    pigment{$(_scriptpov(color_surface))}\n"
+    script *= "    pigment{color_surface}\n"
     script *= "  }\n"
     script *= "  object{\n"
     script *= _spheres(controlpoints(M), preindent=2)
-    script *= "    pigment{$(_scriptpov(color_sphere))}\n"
+    script *= "    pigment{color_sphere}\n"
     script *= "  }\n"
     script *= "  object{\n"
     script *= _cylinders(controlpoints(M), preindent=2)
-    script *= "    pigment{$(_scriptpov(color_cylinder))}\n"
+    script *= "    pigment{color_cylinder}\n"
     script *= "  }\n"
     # script *= _spherecylinder(M, preindent=1)
     script *= "}"
