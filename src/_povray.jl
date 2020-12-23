@@ -33,7 +33,10 @@ function _scriptpov(c::AbstractRGB)
     return "rgb"*_scriptpov(v)
 end
 
-
+"""
+Generate POV-Ray code `mesh2`
+http://povray.org/documentation/3.7.0/r3_4.html#r3_4_5_2_4
+"""
 function _mesh2(M::AbstractBSplineManifold; mesh=(10,10), smooth=true, preindent=0)
     P = bsplinespaces(M)
     p1, p2 = p = degree.(P)
@@ -188,4 +191,21 @@ function _save_povray_2d3d(name::String, M::AbstractBSplineManifold; mesh::Tuple
     end
 
     return nothing
+end
+
+function save_pov(name::String, M::AbstractBSplineManifold; mesh::Tuple{Int,Int}=(10,10), points=true, thickness=0.1, maincolor=RGB(1,0,0), subcolor=RGB(.5,.5,.5))
+    d = dim(M)
+    d̂ = size(controlpoints(M))[end]
+    if d̂ ≠ 3
+        error("The embedding dimension must be three.")
+    end
+    if d == 1
+        error("TODO")
+    elseif d == 2
+        _save_povray_2d3d(name,M,mesh=mesh,points=points,thickness=thickness,maincolor=maincolor,subcolor=subcolor)
+    elseif d == 3
+        error("TODO")
+    else
+        error("the dimension of B-spline manifold must be 3 or less")
+    end
 end
