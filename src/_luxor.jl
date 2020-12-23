@@ -8,21 +8,21 @@ function BézPts(𝒑,a,b)
     𝒑(b)
 end
 
-function LxrPt(p::Array{T,1},step) where T<:Real
+function LxrPt(p::AbstractVector{<:Real},step)
     Point(step*[1,-1].*p...)
 end
 
 """
 export svg file
 """
-function save_svg(name::String, M::AbstractBSplineManifold; up=5, down=-5, right=5, left=-5, zoom=1, mesh=(10,10), unitlength=100, points=true, thickness=1, backgroundcolor=RGB(1,1,1), linecolor=RGB(1,0,0))
+function save_svg(name::String, M::AbstractBSplineManifold; up=5, down=-5, right=5, left=-5, mesh=(10,10), unitlength=100, points=true, thickness=1, backgroundcolor=RGB(1,1,1), linecolor=RGB(1,0,0))
     if split(name,'.')[end] ≠ "svg"
         name = name * ".svg"
     end
     if dim(M) == 1
-        _save_luxor_1d2d(name, M, up=up, down=down, right=right, left=left, zoom=zoom, mesh=mesh, unitlength=unitlength, points=points, thickness=thickness, backgroundcolor=backgroundcolor, linecolor=linecolor)
+        _save_luxor_1d2d(name, M, up=up, down=down, right=right, left=left, mesh=mesh, unitlength=unitlength, points=points, thickness=thickness, backgroundcolor=backgroundcolor, linecolor=linecolor)
     elseif dim(M) == 2
-        _save_luxor_2d2d(name, M, up=up, down=down, right=right, left=left, zoom=zoom, mesh=mesh, unitlength=unitlength, points=points, thickness=thickness, backgroundcolor=backgroundcolor, linecolor=linecolor)
+        _save_luxor_2d2d(name, M, up=up, down=down, right=right, left=left, mesh=mesh, unitlength=unitlength, points=points, thickness=thickness, backgroundcolor=backgroundcolor, linecolor=linecolor)
     else
         error("the dimension of B-spline manifold must be 2 or less")
     end
@@ -31,14 +31,14 @@ end
 """
 export png file
 """
-function save_png(name::String, M::AbstractBSplineManifold; up=5, down=-5, right=5, left=-5, zoom=1, mesh=(10,10), unitlength=100, points=true, thickness=1, backgroundcolor=RGB(1,1,1), linecolor=RGB(1,0,0))
+function save_png(name::String, M::AbstractBSplineManifold; up=5, down=-5, right=5, left=-5, mesh=(10,10), unitlength=100, points=true, thickness=1, backgroundcolor=RGB(1,1,1), linecolor=RGB(1,0,0))
     if split(name,'.')[end] ≠ "png"
         name = name * ".png"
     end
     if dim(M) == 1
-        _save_luxor_1d2d(name, M, up=up, down=down, right=right, left=left, zoom=zoom, mesh=mesh, unitlength=unitlength, points=points, thickness=thickness, backgroundcolor=backgroundcolor, linecolor=linecolor)
+        _save_luxor_1d2d(name, M, up=up, down=down, right=right, left=left, mesh=mesh, unitlength=unitlength, points=points, thickness=thickness, backgroundcolor=backgroundcolor, linecolor=linecolor)
     elseif dim(M) == 2
-        _save_luxor_2d2d(name, M, up=up, down=down, right=right, left=left, zoom=zoom, mesh=mesh, unitlength=unitlength, points=points, thickness=thickness, backgroundcolor=backgroundcolor, linecolor=linecolor)
+        _save_luxor_2d2d(name, M, up=up, down=down, right=right, left=left, mesh=mesh, unitlength=unitlength, points=points, thickness=thickness, backgroundcolor=backgroundcolor, linecolor=linecolor)
     else
         error("the dimension of B-spline manifold must be 2 or less")
     end
@@ -47,13 +47,13 @@ end
 """
 export png file
 """
-function save_png(name::String, M::AbstractBSplineManifold, colors::Array{<:Colorant,2}; up=5, down=-5, right=5, left=-5, zoom=1, unitlength=100)
+function save_png(name::String, M::AbstractBSplineManifold, colors::AbstractArray{<:Colorant,2}; up=5, down=-5, right=5, left=-5, unitlength=100)
     if split(name,'.')[end] ≠ "png"
         name = name * ".png"
     end
 
     if dim(M) == 2
-        _save_luxor_2d2d_color(name, M, colors, up=up, down=down, right=right, left=left, zoom=zoom, unitlength=unitlength)
+        _save_luxor_2d2d_color(name, M, colors, up=up, down=down, right=right, left=left, unitlength=unitlength)
     else
         error("the dimension of B-spline manifold must be 2")
     end
@@ -62,20 +62,20 @@ end
 """
 export png file
 """
-function save_png(name::String, M::AbstractBSplineManifold, colorfunc::Function; up=5, down=-5, right=5, left=-5, zoom=1, unitlength=100)
+function save_png(name::String, M::AbstractBSplineManifold, colorfunc::Function; up=5, down=-5, right=5, left=-5, unitlength=100)
     if split(name,'.')[end] ≠ "png"
         name = name * ".png"
     end
 
     if dim(M) == 2
-        _save_luxor_2d2d_color(name, M, colorfunc, up=up, down=down, right=right, left=left, zoom=zoom, unitlength=unitlength)
+        _save_luxor_2d2d_color(name, M, colorfunc, up=up, down=down, right=right, left=left, unitlength=unitlength)
     else
         error("the dimension of B-spline manifold must be 2")
     end
 end
 
 
-function _save_luxor_2d2d(name::String, M::AbstractBSplineManifold; up=5, down=-5, right=5, left=-5, zoom=1, mesh=(10,10), unitlength=100, points=true, thickness=1, backgroundcolor=RGB(1,1,1), linecolor=RGB(1,0,0))
+function _save_luxor_2d2d(name::String, M::AbstractBSplineManifold; up=5, down=-5, right=5, left=-5, mesh=(10,10), unitlength=100, points=true, thickness=1, backgroundcolor=RGB(1,1,1), linecolor=RGB(1,0,0))
     step = unitlength
     P1, P2 = P = collect(bsplinespaces(M))
     p¹, p² = p = degree.(P)
@@ -128,7 +128,7 @@ function _save_luxor_2d2d(name::String, M::AbstractBSplineManifold; up=5, down=-
     return nothing
 end
 
-function _save_luxor_1d2d(name::String, M::AbstractBSplineManifold; up=5, down=-5, right=5, left=-5, zoom=1, mesh=10, unitlength=100, points=true, thickness=1, backgroundcolor=RGB(1,1,1), linecolor=RGB(1,0,0))
+function _save_luxor_1d2d(name::String, M::AbstractBSplineManifold; up=5, down=-5, right=5, left=-5, mesh=10, unitlength=100, points=true, thickness=1, backgroundcolor=RGB(1,1,1), linecolor=RGB(1,0,0))
     step = unitlength
     P1, = P = collect(bsplinespaces(M))
     p¹, = p = degree.(P)
@@ -163,13 +163,13 @@ function _save_luxor_1d2d(name::String, M::AbstractBSplineManifold; up=5, down=-
     return nothing
 end
 
-function _save_luxor_2d2d_color(name::String, M::AbstractBSplineManifold, colors::Array{T,2} where T <: Colorant; up=5, down=-5, right=5, left=-5, zoom=1, unitlength=100)
+function _save_luxor_2d2d_color(name::String, M::AbstractBSplineManifold, colors::AbstractArray{<:Colorant,2}; up=5, down=-5, right=5, left=-5, unitlength=100)
     P = collect(bsplinespaces(M))
     colorfunc(u) = sum(bsplinebasis(P,u).*colors)
-    _save_luxor_2d2d_color(name, M, colorfunc; up=up, down=down, right=right, left=left, zoom=zoom, unitlength=unitlength)
+    _save_luxor_2d2d_color(name, M, colorfunc; up=up, down=down, right=right, left=left, unitlength=unitlength)
 end
 
-function _save_luxor_2d2d_color(name::String, M::AbstractBSplineManifold, colorfunc::Function; up=5, down=-5, right=5, left=-5, zoom=1, unitlength=100)
+function _save_luxor_2d2d_color(name::String, M::AbstractBSplineManifold, colorfunc::Function; up=5, down=-5, right=5, left=-5, unitlength=100)
     mesh = 10
 
     step = unitlength
@@ -187,8 +187,7 @@ function _save_luxor_2d2d_color(name::String, M::AbstractBSplineManifold, colorf
 
     Drawing(step*(right-left),step*(up-down),name)
     Luxor.origin(-step*left,step*up)
-    setline(2*zoom)
-    background(RGBA(0.0,0.0,0.0,0.0))
+    background(RGBA(0,0,0,0))
 
     for I₁ ∈ 1:length(K¹)-1, I₂ ∈ 1:length(K²)-1
         BézPth=BezierPath([
