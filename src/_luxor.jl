@@ -131,7 +131,7 @@ function _save_luxor_2d2d(name::String, M::AbstractBSplineManifold; up=5, down=-
     return nothing
 end
 
-function _save_luxor_1d2d(name::String, M::AbstractBSplineManifold; up=5, down=-5, right=5, left=-5, mesh=10, unitlength=100, points=true, thickness=1, backgroundcolor=RGB(1,1,1), maincolor=RGB(1,0,0))
+function _save_luxor_1d2d(name::String, M::AbstractBSplineManifold; up=5, down=-5, right=5, left=-5, mesh=10, unitlength=100, points=true, thickness=1, backgroundcolor=RGB(1,1,1), maincolor=RGB(1,0,0), subcolor=RGB(.5,.5,.5))
     linecolor = maincolor
     segmentcolor = subcolor
     pointcolor = weighted_color_mean(0.5, subcolor, colorant"black")
