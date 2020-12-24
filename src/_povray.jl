@@ -36,6 +36,15 @@ function _scriptpov(c::AbstractRGB)
 end
 
 """
+RGB(1,2,3) -> "rgb<1,2,3>"
+"""
+function _scriptpov(c::ColorAlpha)
+    _c = RGBA(c)
+    v = [_c.r,_c.g,_c.b,1-_c.alpha]
+    return "rgbt"*_scriptpov(v)
+end
+
+"""
 Generate POV-Ray script of `mesh2`
 http://povray.org/documentation/3.7.0/r3_4.html#r3_4_5_2_4
 """
