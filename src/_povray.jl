@@ -45,15 +45,56 @@ function _scriptpov(c::ColorAlpha)
 end
 
 """
+Return 6 surfaces of B-spline solid
+"""
+function _bsplinesurfaces(M::AbstractBSplineManifold)
+    a = controlpoints(M)
+    P1, P2, P3 = bsplinespaces(M)
+    I1, I2, I3 = bsplineunity(P1), bsplineunity(P2), bsplineunity(P3)
+    n1, n2, n3 = dim(P1), dim(P2), dim(P3)
+
+    t_⚀ = minimum(I1)
+    t_⚁ = minimum(I2)
+    t_⚂ = minimum(I3)
+    t_⚃ = maximum(I1)
+    t_⚄ = maximum(I2)
+    t_⚅ = maximum(I3)
+
+    B_⚀ = [bsplinebasis(i,P1,t_⚀) for i in 1:n1]
+    B_⚁ = [bsplinebasis(i,P2,t_⚁) for i in 1:n2]
+    B_⚂ = [bsplinebasis(i,P3,t_⚂) for i in 1:n3]
+    B_⚃ = [bsplinebasis(i,P1,t_⚃) for i in 1:n1]
+    B_⚄ = [bsplinebasis(i,P2,t_⚄) for i in 1:n2]
+    B_⚅ = [bsplinebasis(i,P3,t_⚅) for i in 1:n3]
+
+    a_⚀ = sum(a[i1,:,:,:]*B_⚀[i1] for i1 in 1:n1)
+    a_⚁ = sum(a[:,i2,:,:]*B_⚁[i2] for i2 in 1:n2)
+    a_⚂ = sum(a[:,:,i3,:]*B_⚂[i3] for i3 in 1:n3)
+    a_⚃ = sum(a[i1,:,:,:]*B_⚃[i1] for i1 in 1:n1)
+    a_⚄ = sum(a[:,i2,:,:]*B_⚄[i2] for i2 in 1:n2)
+    a_⚅ = sum(a[:,:,i3,:]*B_⚅[i3] for i3 in 1:n3)
+
+    M_⚀ = BSplineSurface([P2,P3], a_⚀)
+    M_⚁ = BSplineSurface([P1,P3], a_⚁)
+    M_⚂ = BSplineSurface([P1,P2], a_⚂)
+    M_⚃ = BSplineSurface([P2,P3], a_⚃)
+    M_⚄ = BSplineSurface([P1,P3], a_⚄)
+    M_⚅ = BSplineSurface([P1,P2], a_⚅)
+
+    return (M_⚀, M_⚁, M_⚂, M_⚃, M_⚄, M_⚅)
+end
+
+
+"""
 Generate POV-Ray script of `mesh2`
 http://povray.org/documentation/3.7.0/r3_4.html#r3_4_5_2_4
 """
-function _surface(M::AbstractBSplineManifold; mesh=(10,10), smooth=true, preindent=0)
+function _surface(M::AbstractBSplineManifold; mesh::Int=10, smooth=true, preindent=0)
     P = bsplinespaces(M)
     p1, p2 = p = degree.(P)
     k1, k2 = k = knots.(P)
     l1, l2 = l = length.(k)
-    m1, m2 = m = mesh
+    m1, m2 = m = (mesh, mesh)
 
     ts1 = unique!(vcat([range(k1[i],k1[i+1],length = m1+1) for i in p1+1:l1-p1-1]...))
     ts2 = unique!(vcat([range(k2[i],k2[i+1],length = m2+1) for i in p2+1:l2-p2-1]...))
@@ -142,11 +183,28 @@ function _cylinders(a::AbstractArray{<:AbstractVector{<:Real},2}; preindent=0, r
     n1, n2 = size(a)
     script = "  "^(preindent)
     script *= "union{\n"
-    for i in 1:n1
-        script *= _cylinders(a[i,:], preindent=preindent+1, radius_name=radius_name)
+    for i1 in 1:n1
+        script *= _cylinders(a[i1,:], preindent=preindent+1, radius_name=radius_name)
     end
-    for i in 1:n2
-        script *= _cylinders(a[:,i], preindent=preindent+1, radius_name=radius_name)
+    for i2 in 1:n2
+        script *= _cylinders(a[:,i2], preindent=preindent+1, radius_name=radius_name)
+    end
+    script *= "  "^(preindent)
+    script *= "}\n"
+end
+
+function _cylinders(a::AbstractArray{<:AbstractVector{<:Real},3}; preindent=0, radius_name="radius_cylinder")
+    n1, n2, n3 = size(a)
+    script = "  "^(preindent)
+    script *= "union{\n"
+    for i2 in 1:n2, i3 in 1:n3
+        script *= _cylinders(a[:,i2,i3], preindent=preindent+1, radius_name=radius_name)
+    end
+    for i1 in 1:n1, i3 in 1:n3
+        script *= _cylinders(a[i1,:,i3], preindent=preindent+1, radius_name=radius_name)
+    end
+    for i1 in 1:n1, i2 in 1:n2
+        script *= _cylinders(a[i1,i2,:], preindent=preindent+1, radius_name=radius_name)
     end
     script *= "  "^(preindent)
     script *= "}\n"
@@ -161,8 +219,6 @@ function _curve(M::AbstractBSplineManifold; mesh=10, preindent=0, radius_name="r
 
     ts = unique!(vcat([range(k[i],k[i+1],length = m+1) for i in p+1:l-p-1]...))
 
-    N = length(ts)-1
-
     𝒑s = M.(ts)
 
     script = "  "^(preindent)
@@ -175,6 +231,19 @@ function _curve(M::AbstractBSplineManifold; mesh=10, preindent=0, radius_name="r
     script *= _cylinders(𝒑s, preindent=preindent+2, radius_name=radius_name)
     script *= "    pigment{$(color_name)}\n" * "  "^(preindent)
     script *= "  }\n" * "  "^(preindent)
+    script *= "}\n"
+
+    return script
+end
+
+function _solid(M::AbstractBSplineManifold; mesh=10, smooth=true, preindent=0)
+    surfaces = _bsplinesurfaces(M)
+
+    script = "  "^(preindent)
+    script *= "union{\n"
+    for M in surfaces
+        script *= "  " * _surface(M, mesh=mesh, preindent=preindent+1)
+    end
     script *= "}\n"
 
     return script
@@ -232,8 +301,44 @@ function _save_povray_2d3d(name::String, M::AbstractBSplineManifold; mesh::Int=1
     script *= "#local color_surface = $(_scriptpov(color_surface));\n"
     script *= "union{\n"
     script *= "  object{\n"
-    script *= _surface(M, mesh=(mesh,mesh), preindent=2)
+    script *= _surface(M, mesh=mesh, preindent=2)
     script *= "    pigment{color_surface}\n"
+    script *= "  }\n"
+    if points
+        script *= "  object{\n"
+        script *= _spheres(M, preindent=2)
+        script *= "    pigment{color_sphere}\n"
+        script *= "  }\n"
+        script *= "  object{\n"
+        script *= _cylinders(M, preindent=2)
+        script *= "    pigment{color_cylinder}\n"
+        script *= "  }\n"
+    end
+    script *= "}"
+
+    open(name, "w") do f
+        write(f,script)
+    end
+
+    return nothing
+end
+
+function _save_povray_3d3d(name::String, M::AbstractBSplineManifold; mesh::Int=10, points=true, thickness=0.1, maincolor=RGB(1,0,0), subcolor=RGB(.5,.5,.5))
+    radius_cylinder = thickness
+    radius_sphere = 2*radius_cylinder
+    color_cylinder = subcolor
+    color_sphere = weighted_color_mean(0.5, subcolor, colorant"black")
+    color_solid = maincolor
+    script = HEADER
+    script *= "#local radius_sphere = $(radius_sphere);\n"
+    script *= "#local radius_cylinder = $(radius_cylinder);\n"
+    script *= "#local color_sphere = $(_scriptpov(color_sphere));\n"
+    script *= "#local color_cylinder = $(_scriptpov(color_cylinder));\n"
+    script *= "#local color_solid = $(_scriptpov(color_solid));\n"
+    script *= "union{\n"
+    script *= "  object{\n"
+    script *= _solid(M, mesh=mesh, preindent=2)
+    script *= "    pigment{color_solid}\n"
     script *= "  }\n"
     if points
         script *= "  object{\n"
@@ -265,7 +370,7 @@ function save_pov(name::String, M::AbstractBSplineManifold; mesh::Int=10, points
     elseif d == 2
         _save_povray_2d3d(name,M,mesh=mesh,points=points,thickness=thickness,maincolor=maincolor,subcolor=subcolor)
     elseif d == 3
-        error("TODO")
+        _save_povray_3d3d(name,M,mesh=mesh,points=points,thickness=thickness,maincolor=maincolor,subcolor=subcolor)
     else
         error("the dimension of B-spline manifold must be 3 or less")
     end
