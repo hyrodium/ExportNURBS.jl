@@ -49,7 +49,7 @@ using Colors
     end
 
     @testset "1d3d" begin
-        p = 3 # degree of polynomial
+        p = 4 # degree of polynomial
         k = Knots(rand(12)) # knot vector
         P = FastBSplineSpace(p, k) # B-spline space
         rand_a = [randn(3) for i in 1:dim(P)]
