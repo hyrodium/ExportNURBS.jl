@@ -48,7 +48,7 @@ end
 Generate POV-Ray script of `mesh2`
 http://povray.org/documentation/3.7.0/r3_4.html#r3_4_5_2_4
 """
-function _mesh2(M::AbstractBSplineManifold; mesh=(10,10), smooth=true, preindent=0)
+function _surface(M::AbstractBSplineManifold; mesh=(10,10), smooth=true, preindent=0)
     P = bsplinespaces(M)
     p1, p2 = p = degree.(P)
     k1, k2 = k = knots.(P)
@@ -111,56 +111,114 @@ function _mesh2(M::AbstractBSplineManifold; mesh=(10,10), smooth=true, preindent
     return script
 end
 
-for fname in (:_spheres, :_cylinders)
-    @eval function $(fname)(M::AbstractBSplineManifold; preindent=0)
-        $(fname)(controlpoints(M), preindent=preindent)
-    end
-
-    @eval function $(fname)(a::AbstractArray{<:Real}; preindent=0)
-        s = size(a)
-        d̂ = s[end]
-        N = s[1:end-1]
-        a_flat = reshape(a,prod(N),d̂)
-        a_vec = [a_flat[i,:] for i in 1:prod(N)]
-        a′ = reshape(a_vec,N)
-        $(fname)(a′, preindent=preindent)
-    end
+function _spheres(M::AbstractBSplineManifold; preindent=0, radius_name="radius_sphere")
+    _spheres(BasicBSpline.array2arrayofvector(controlpoints(M)), preindent=preindent, radius_name=radius_name)
 end
 
-function _spheres(a::AbstractArray{<:AbstractVector{<:Real}}; preindent=0)
+function _cylinders(M::AbstractBSplineManifold; preindent=0, radius_name="radius_cylinder")
+    _cylinders(BasicBSpline.array2arrayofvector(controlpoints(M)), preindent=preindent, radius_name=radius_name)
+end
+
+function _spheres(a::AbstractArray{<:AbstractVector{<:Real}}; preindent=0, radius_name="radius_sphere")
     script = "  "^(preindent)
     script *= "union{\n" * "  "^(preindent)
     for ai in a
-        script *= "  sphere{" * _scriptpov(ai) * ", radius_sphere}\n" * "  "^(preindent)
+        script *= "  sphere{$(_scriptpov(ai)), $(radius_name)}\n" * "  "^(preindent)
     end
     script *= "}\n"
 end
 
-function _cylinders(a::AbstractVector{<:AbstractVector{<:Real}}; preindent=0)
+function _cylinders(a::AbstractArray{<:AbstractVector{<:Real},1}; preindent=0, radius_name="radius_cylinder")
     n = length(a)
     script = "  "^(preindent)
     script *= "union{\n" * "  "^(preindent)
     for i in 1:n-1
-        script *= "  cylinder{" * _scriptpov(a[i]) * "," * _scriptpov(a[i+1]) * ", radius_cylinder}\n" * "  "^(preindent)
+        script *= "  cylinder{$(_scriptpov(a[i])), $(_scriptpov(a[i+1])), $(radius_name)}\n" * "  "^(preindent)
     end
     script *= "}\n"
 end
 
-function _cylinders(a::AbstractArray{<:AbstractVector{<:Real}}; preindent=0)
+function _cylinders(a::AbstractArray{<:AbstractVector{<:Real},2}; preindent=0, radius_name="radius_cylinder")
     n1, n2 = size(a)
     script = "  "^(preindent)
     script *= "union{\n"
     for i in 1:n1
-        script *= _cylinders(a[i,:], preindent=preindent+1)
+        script *= _cylinders(a[i,:], preindent=preindent+1, radius_name=radius_name)
     end
     for i in 1:n2
-        script *= _cylinders(a[:,i], preindent=preindent+1)
+        script *= _cylinders(a[:,i], preindent=preindent+1, radius_name=radius_name)
     end
     script *= "  "^(preindent)
     script *= "}\n"
 end
 
-function _save_povray_2d3d(name::String, M::AbstractBSplineManifold; mesh::Tuple{Int,Int}=(10,10), points=true, thickness=0.1, maincolor=RGB(1,0,0), subcolor=RGB(.5,.5,.5))
+function _curve(M::AbstractBSplineManifold; mesh=10, preindent=0, radius_name="radius_curve", color_name="color_curve")
+    P = bsplinespaces(M)[1]
+    p = degree(P)
+    k = knots(P)
+    l = length(k)
+    m = mesh
+
+    ts = unique!(vcat([range(k[i],k[i+1],length = m+1) for i in p+1:l-p-1]...))
+
+    N = length(ts)-1
+
+    𝒑s = M.(ts)
+
+    script = "  "^(preindent)
+    script *= "union{\n" * "  "^(preindent)
+    script *= "  object{\n"
+    script *= _spheres(𝒑s, preindent=preindent+2, radius_name=radius_name)
+    script *= "    pigment{$(color_name)}\n" * "  "^(preindent)
+    script *= "  }\n" * "  "^(preindent)
+    script *= "  object{\n"
+    script *= _cylinders(𝒑s, preindent=preindent+2, radius_name=radius_name)
+    script *= "    pigment{$(color_name)}\n" * "  "^(preindent)
+    script *= "  }\n" * "  "^(preindent)
+    script *= "}\n"
+
+    return script
+end
+
+function _save_povray_1d3d(name::String, M::AbstractBSplineManifold; mesh::Int=10, points=true, thickness=0.1, maincolor=RGB(1,0,0), subcolor=RGB(.5,.5,.5))
+    radius_curve = thickness
+    radius_cylinder = thickness
+    radius_sphere = 2*radius_cylinder
+    color_curve = maincolor
+    color_cylinder = subcolor
+    color_sphere = weighted_color_mean(0.5, subcolor, colorant"black")
+    script = HEADER
+    script *= "#local radius_curve = $(radius_curve);\n"
+    script *= "#local radius_sphere = $(radius_sphere);\n"
+    script *= "#local radius_cylinder = $(radius_cylinder);\n"
+    script *= "#local color_curve = $(_scriptpov(color_curve));\n"
+    script *= "#local color_sphere = $(_scriptpov(color_sphere));\n"
+    script *= "#local color_cylinder = $(_scriptpov(color_cylinder));\n"
+    script *= "union{\n"
+    script *= "  object{\n"
+    script *= _curve(M, mesh=mesh, preindent=2, radius_name=radius_curve)
+    script *= "    pigment{color_curve}\n"
+    script *= "  }\n"
+    if points
+        script *= "  object{\n"
+        script *= _spheres(M, preindent=2)
+        script *= "    pigment{color_sphere}\n"
+        script *= "  }\n"
+        script *= "  object{\n"
+        script *= _cylinders(M, preindent=2)
+        script *= "    pigment{color_cylinder}\n"
+        script *= "  }\n"
+    end
+    script *= "}"
+
+    open(name, "w") do f
+        write(f,script)
+    end
+
+    return nothing
+end
+
+function _save_povray_2d3d(name::String, M::AbstractBSplineManifold; mesh::Int=10, points=true, thickness=0.1, maincolor=RGB(1,0,0), subcolor=RGB(.5,.5,.5))
     radius_cylinder = thickness
     radius_sphere = 2*radius_cylinder
     color_cylinder = subcolor
@@ -174,16 +232,16 @@ function _save_povray_2d3d(name::String, M::AbstractBSplineManifold; mesh::Tuple
     script *= "#local color_surface = $(_scriptpov(color_surface));\n"
     script *= "union{\n"
     script *= "  object{\n"
-    script *= _mesh2(M,mesh=mesh, preindent=2)
+    script *= _surface(M, mesh=(mesh,mesh), preindent=2)
     script *= "    pigment{color_surface}\n"
     script *= "  }\n"
     if points
         script *= "  object{\n"
-        script *= _spheres(controlpoints(M), preindent=2)
+        script *= _spheres(M, preindent=2)
         script *= "    pigment{color_sphere}\n"
         script *= "  }\n"
         script *= "  object{\n"
-        script *= _cylinders(controlpoints(M), preindent=2)
+        script *= _cylinders(M, preindent=2)
         script *= "    pigment{color_cylinder}\n"
         script *= "  }\n"
     end
@@ -196,14 +254,14 @@ function _save_povray_2d3d(name::String, M::AbstractBSplineManifold; mesh::Tuple
     return nothing
 end
 
-function save_pov(name::String, M::AbstractBSplineManifold; mesh::Tuple{Int,Int}=(10,10), points=true, thickness=0.1, maincolor=RGB(1,0,0), subcolor=RGB(.5,.5,.5))
+function save_pov(name::String, M::AbstractBSplineManifold; mesh::Int=10, points=true, thickness=0.1, maincolor=RGB(1,0,0), subcolor=RGB(.5,.5,.5))
     d = dim(M)
     d̂ = size(controlpoints(M))[end]
     if d̂ ≠ 3
         error("The embedding dimension must be three.")
     end
     if d == 1
-        error("TODO")
+        _save_povray_1d3d(name,M,mesh=mesh,points=points,thickness=thickness,maincolor=maincolor,subcolor=subcolor)
     elseif d == 2
         _save_povray_2d3d(name,M,mesh=mesh,points=points,thickness=thickness,maincolor=maincolor,subcolor=subcolor)
     elseif d == 3
