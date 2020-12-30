@@ -7,40 +7,72 @@ using Colors
 @testset "ExportNURBS.jl" begin
     Random.seed!(42)
 
-    @testset "luxor" begin
-        p = 2 # degree of polynomial
-        k = Knots(1:8) # knot vector
+    @testset "1d2d" begin
+        p = 3 # degree of polynomial
+        k = Knots(1:12) # knot vector
         P = FastBSplineSpace(p, k) # B-spline space
-        rand_a = [rand(2) for i in 1:dim(P), j in 1:dim(P)]
-        a = [[2 * i - 6.5, 2 * j - 6.5] for i in 1:dim(P), j in 1:dim(P)] + rand_a # random generated control points
-        M = BSplineSurface([P, P], a) # Define B-spline manifold
+        rand_a = [randn(2) for i in 1:dim(P)] / 2
+        a = [[2 * i - 6, 0] for i in 1:dim(P)] + rand_a # random generated control points
+        M = BSplineCurve([P], a) # Define B-spline manifold
 
-        @testset "svg" begin
-            save_svg("test.svg",M)
-            @test isfile("test.svg")
+        @testset "luxor-svg" begin
+            save_svg("1d2d.svg",M)
+            @test isfile("1d2d.svg")
         end
-        @testset "png" begin
-            save_png("test.png",M)
-            @test isfile("test.png")
-        end
-        @testset "color-png" begin
-            color(u) = rand(RGB)
-            save_png("test_color.png", M, color)
-            @test isfile("test_color.png")
+        @testset "luxor-png" begin
+            save_png("1d2d.png",M)
+            @test isfile("1d2d.png")
         end
     end
 
-    @testset "povray" begin
-        p = 2 # degree of polynomial
-        k = Knots(1:8) # knot vector
+    @testset "2d2d" begin
+        p = 3 # degree of polynomial
+        k = Knots(1:12) # knot vector
         P = FastBSplineSpace(p, k) # B-spline space
-        rand_a = [rand(3) for i in 1:dim(P), j in 1:dim(P)]
-        a = [[2 * i - 6.5, 2 * j - 6.5,-0.5] for i in 1:dim(P), j in 1:dim(P)] + rand_a # random generated control points
+        rand_a = [randn(2) for i in 1:dim(P), j in 1:dim(P)] / 2
+        a = [[2 * i - 6, 2 * j - 6] for i in 1:dim(P), j in 1:dim(P)] + rand_a # random generated control points
         M = BSplineSurface([P, P], a) # Define B-spline manifold
 
-        @testset "2d3d" begin
-            save_pov("test.inc",M)
-            @test isfile("test.inc")
+        @testset "luxor-svg" begin
+            save_svg("2d2d.svg",M)
+            @test isfile("2d2d.svg")
+        end
+        @testset "luxor-png" begin
+            save_png("2d2d.png",M)
+            @test isfile("2d2d.png")
+        end
+        @testset "luxor-color-png" begin
+            color(u) = rand(RGB)
+            save_png("2d2d_color.png", M, color)
+            @test isfile("2d2d_color.png")
+        end
+    end
+
+    @testset "1d3d" begin
+        p = 3 # degree of polynomial
+        k = Knots(rand(12)) # knot vector
+        P = FastBSplineSpace(p, k) # B-spline space
+        rand_a = [randn(3) for i in 1:dim(P)]
+        a = [[2 * i - 6, 2 * i - 6, 0] for i in 1:dim(P)] + rand_a # random generated control points
+        M = BSplineCurve([P], a) # Define B-spline manifold
+
+        @testset "povray" begin
+            save_pov("1d3d.inc",M)
+            @test isfile("1d3d.inc")
+        end
+    end
+
+    @testset "2d3d" begin
+        p = 3 # degree of polynomial
+        k = Knots(1:12) # knot vector
+        P = FastBSplineSpace(p, k) # B-spline space
+        rand_a = [randn(3) for i in 1:dim(P), j in 1:dim(P)] / 2
+        a = [[2 * i - 6, 2 * j - 6, 0] for i in 1:dim(P), j in 1:dim(P)] + rand_a # random generated control points
+        M = BSplineSurface([P, P], a) # Define B-spline manifold
+
+        @testset "povray" begin
+            save_pov("2d3d.inc", M , maincolor=RGBA(0,1,1,0.95))
+            @test isfile("2d3d.inc")
         end
     end
 end
