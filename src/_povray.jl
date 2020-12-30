@@ -44,46 +44,87 @@ function _scriptpov(c::ColorAlpha)
     return "rgbt"*_scriptpov(v)
 end
 
-"""
-Return 6 surfaces of B-spline solid
-"""
-function _bsplinesurfaces(M::AbstractBSplineManifold)
-    a = controlpoints(M)
-    P1, P2, P3 = bsplinespaces(M)
-    I1, I2, I3 = bsplineunity(P1), bsplineunity(P2), bsplineunity(P3)
-    n1, n2, n3 = dim(P1), dim(P2), dim(P3)
-
-    t_⚀ = minimum(I1)
-    t_⚁ = minimum(I2)
-    t_⚂ = minimum(I3)
-    t_⚃ = maximum(I1)
-    t_⚄ = maximum(I2)
-    t_⚅ = maximum(I3)
-
-    B_⚀ = [bsplinebasis(i,P1,t_⚀) for i in 1:n1]
-    B_⚁ = [bsplinebasis(i,P2,t_⚁) for i in 1:n2]
-    B_⚂ = [bsplinebasis(i,P3,t_⚂) for i in 1:n3]
-    B_⚃ = [bsplinebasis(i,P1,t_⚃) for i in 1:n1]
-    B_⚄ = [bsplinebasis(i,P2,t_⚄) for i in 1:n2]
-    B_⚅ = [bsplinebasis(i,P3,t_⚅) for i in 1:n3]
-
-    a_⚀ = sum(a[i1,:,:,:]*B_⚀[i1] for i1 in 1:n1)
-    a_⚁ = sum(a[:,i2,:,:]*B_⚁[i2] for i2 in 1:n2)
-    a_⚂ = sum(a[:,:,i3,:]*B_⚂[i3] for i3 in 1:n3)
-    a_⚃ = sum(a[i1,:,:,:]*B_⚃[i1] for i1 in 1:n1)
-    a_⚄ = sum(a[:,i2,:,:]*B_⚄[i2] for i2 in 1:n2)
-    a_⚅ = sum(a[:,:,i3,:]*B_⚅[i3] for i3 in 1:n3)
-
-    M_⚀ = BSplineSurface([P2,P3], a_⚀)
-    M_⚁ = BSplineSurface([P1,P3], a_⚁)
-    M_⚂ = BSplineSurface([P1,P2], a_⚂)
-    M_⚃ = BSplineSurface([P2,P3], a_⚃)
-    M_⚄ = BSplineSurface([P1,P3], a_⚄)
-    M_⚅ = BSplineSurface([P1,P2], a_⚅)
-
-    return (M_⚀, M_⚁, M_⚂, M_⚃, M_⚄, M_⚅)
+function _spheres(M::AbstractBSplineManifold; preindent=0, radius_name="radius_sphere")
+    _spheres(BasicBSpline.array2arrayofvector(controlpoints(M)), preindent=preindent, radius_name=radius_name)
 end
 
+function _cylinders(M::AbstractBSplineManifold; preindent=0, radius_name="radius_cylinder")
+    _cylinders(BasicBSpline.array2arrayofvector(controlpoints(M)), preindent=preindent, radius_name=radius_name)
+end
+
+function _spheres(a::AbstractArray{<:AbstractVector{<:Real}}; preindent=0, radius_name="radius_sphere")
+    script = "  "^(preindent)
+    script *= "union{\n" * "  "^(preindent)
+    for ai in a
+        script *= "  sphere{$(_scriptpov(ai)), $(radius_name)}\n" * "  "^(preindent)
+    end
+    script *= "}\n"
+end
+
+function _cylinders(a::AbstractArray{<:AbstractVector{<:Real},1}; preindent=0, radius_name="radius_cylinder")
+    n = length(a)
+    script = "  "^(preindent)
+    script *= "union{\n" * "  "^(preindent)
+    for i in 1:n-1
+        script *= "  cylinder{$(_scriptpov(a[i])), $(_scriptpov(a[i+1])), $(radius_name)}\n" * "  "^(preindent)
+    end
+    script *= "}\n"
+end
+
+function _cylinders(a::AbstractArray{<:AbstractVector{<:Real},2}; preindent=0, radius_name="radius_cylinder")
+    n1, n2 = size(a)
+    script = "  "^(preindent)
+    script *= "union{\n"
+    for i1 in 1:n1
+        script *= _cylinders(a[i1,:], preindent=preindent+1, radius_name=radius_name)
+    end
+    for i2 in 1:n2
+        script *= _cylinders(a[:,i2], preindent=preindent+1, radius_name=radius_name)
+    end
+    script *= "  "^(preindent)
+    script *= "}\n"
+end
+
+function _cylinders(a::AbstractArray{<:AbstractVector{<:Real},3}; preindent=0, radius_name="radius_cylinder")
+    n1, n2, n3 = size(a)
+    script = "  "^(preindent)
+    script *= "union{\n"
+    for i2 in 1:n2, i3 in 1:n3
+        script *= _cylinders(a[:,i2,i3], preindent=preindent+1, radius_name=radius_name)
+    end
+    for i1 in 1:n1, i3 in 1:n3
+        script *= _cylinders(a[i1,:,i3], preindent=preindent+1, radius_name=radius_name)
+    end
+    for i1 in 1:n1, i2 in 1:n2
+        script *= _cylinders(a[i1,i2,:], preindent=preindent+1, radius_name=radius_name)
+    end
+    script *= "  "^(preindent)
+    script *= "}\n"
+end
+
+function _curve(M::AbstractBSplineManifold; mesh=10, preindent=0, radius_name="radius_curve")
+    P = bsplinespaces(M)[1]
+    p = degree(P)
+    k = knots(P)
+    l = length(k)
+    m = mesh
+
+    ts = unique!(vcat([range(k[i],k[i+1],length = m+1) for i in p+1:l-p-1]...))
+
+    𝒑s = M.(ts)
+
+    script = "  "^(preindent)
+    script *= "union{\n" * "  "^(preindent)
+    script *= "  object{\n"
+    script *= _spheres(𝒑s, preindent=preindent+2, radius_name=radius_name)
+    script *= "  }\n" * "  "^(preindent)
+    script *= "  object{\n"
+    script *= _cylinders(𝒑s, preindent=preindent+2, radius_name=radius_name)
+    script *= "  }\n" * "  "^(preindent)
+    script *= "}\n"
+
+    return script
+end
 
 """
 Generate POV-Ray script of `mesh2`
@@ -146,90 +187,6 @@ function _surface(M::AbstractBSplineManifold; mesh::Int=10, smooth=true, preinde
     script *= "    " * _scriptpov([F2...]) * "\n" * "  "^(preindent)
     script *= "    " * _scriptpov([F3...]) * "\n" * "  "^(preindent)
     script *= "    " * _scriptpov([F4...]) * "\n" * "  "^(preindent)
-    script *= "  }\n" * "  "^(preindent)
-    script *= "}\n"
-
-    return script
-end
-
-function _spheres(M::AbstractBSplineManifold; preindent=0, radius_name="radius_sphere")
-    _spheres(BasicBSpline.array2arrayofvector(controlpoints(M)), preindent=preindent, radius_name=radius_name)
-end
-
-function _cylinders(M::AbstractBSplineManifold; preindent=0, radius_name="radius_cylinder")
-    _cylinders(BasicBSpline.array2arrayofvector(controlpoints(M)), preindent=preindent, radius_name=radius_name)
-end
-
-function _spheres(a::AbstractArray{<:AbstractVector{<:Real}}; preindent=0, radius_name="radius_sphere")
-    script = "  "^(preindent)
-    script *= "union{\n" * "  "^(preindent)
-    for ai in a
-        script *= "  sphere{$(_scriptpov(ai)), $(radius_name)}\n" * "  "^(preindent)
-    end
-    script *= "}\n"
-end
-
-function _cylinders(a::AbstractArray{<:AbstractVector{<:Real},1}; preindent=0, radius_name="radius_cylinder")
-    n = length(a)
-    script = "  "^(preindent)
-    script *= "union{\n" * "  "^(preindent)
-    for i in 1:n-1
-        script *= "  cylinder{$(_scriptpov(a[i])), $(_scriptpov(a[i+1])), $(radius_name)}\n" * "  "^(preindent)
-    end
-    script *= "}\n"
-end
-
-function _cylinders(a::AbstractArray{<:AbstractVector{<:Real},2}; preindent=0, radius_name="radius_cylinder")
-    n1, n2 = size(a)
-    script = "  "^(preindent)
-    script *= "union{\n"
-    for i1 in 1:n1
-        script *= _cylinders(a[i1,:], preindent=preindent+1, radius_name=radius_name)
-    end
-    for i2 in 1:n2
-        script *= _cylinders(a[:,i2], preindent=preindent+1, radius_name=radius_name)
-    end
-    script *= "  "^(preindent)
-    script *= "}\n"
-end
-
-function _cylinders(a::AbstractArray{<:AbstractVector{<:Real},3}; preindent=0, radius_name="radius_cylinder")
-    n1, n2, n3 = size(a)
-    script = "  "^(preindent)
-    script *= "union{\n"
-    for i2 in 1:n2, i3 in 1:n3
-        script *= _cylinders(a[:,i2,i3], preindent=preindent+1, radius_name=radius_name)
-    end
-    for i1 in 1:n1, i3 in 1:n3
-        script *= _cylinders(a[i1,:,i3], preindent=preindent+1, radius_name=radius_name)
-    end
-    for i1 in 1:n1, i2 in 1:n2
-        script *= _cylinders(a[i1,i2,:], preindent=preindent+1, radius_name=radius_name)
-    end
-    script *= "  "^(preindent)
-    script *= "}\n"
-end
-
-function _curve(M::AbstractBSplineManifold; mesh=10, preindent=0, radius_name="radius_curve", color_name="color_curve")
-    P = bsplinespaces(M)[1]
-    p = degree(P)
-    k = knots(P)
-    l = length(k)
-    m = mesh
-
-    ts = unique!(vcat([range(k[i],k[i+1],length = m+1) for i in p+1:l-p-1]...))
-
-    𝒑s = M.(ts)
-
-    script = "  "^(preindent)
-    script *= "union{\n" * "  "^(preindent)
-    script *= "  object{\n"
-    script *= _spheres(𝒑s, preindent=preindent+2, radius_name=radius_name)
-    script *= "    pigment{$(color_name)}\n" * "  "^(preindent)
-    script *= "  }\n" * "  "^(preindent)
-    script *= "  object{\n"
-    script *= _cylinders(𝒑s, preindent=preindent+2, radius_name=radius_name)
-    script *= "    pigment{$(color_name)}\n" * "  "^(preindent)
     script *= "  }\n" * "  "^(preindent)
     script *= "}\n"
 
