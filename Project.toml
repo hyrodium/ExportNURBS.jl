@@ -12,7 +12,7 @@ Luxor = "ae8d54c2-7ccd-5906-9d76-62fc9837b5bc"
 
 [compat]
 julia = "1"
-BasicBSpline = "0.1.2"
+BasicBSpline = "0.1.4"
 
 [extras]
 Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
