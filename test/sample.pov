@@ -1,6 +1,6 @@
 global_settings{assumed_gamma 1.0}
 
-#declare Lng=80+180;
+#declare Lng=80;
 #declare Lat=30;
 #declare Tilt=0;
 #declare Pers=0.1;
@@ -46,6 +46,6 @@ global_settings{assumed_gamma 1.0}
 #end
 background{rgb<1,1,1>}
 
-// object{#include "1d3d.inc" scale 0.15 translate z/2}
-// object{#include "2d3d.inc" scale 0.15}
-object{#include "3d3d.inc" scale 0.1 translate -z/2}
+// object{#include "1d3d.inc" scale 0.15 translate 0}
+// object{#include "2d3d.inc" scale 0.15 translate -y-x/2}
+object{#include "3d3d.inc" scale 0.08}
